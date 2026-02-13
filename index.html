@@ -1,61 +1,159 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>MC Skin Lava Converter</title>
+<meta charset="UTF-8">
+<title>MC Skin 3D Converter</title>
+<style>
+body {
+    margin:0;
+    background: linear-gradient(135deg,#0f0f0f,#1a1a1a);
+    font-family: Arial, sans-serif;
+    color:white;
+    text-align:center;
+}
+h1 {
+    margin-top:30px;
+    font-size:32px;
+}
+.container {
+    margin-top:30px;
+}
+button {
+    margin:10px;
+    padding:10px 20px;
+    border:none;
+    border-radius:8px;
+    background:linear-gradient(45deg,#ff5500,#ff0000);
+    color:white;
+    cursor:pointer;
+    font-weight:bold;
+}
+button:hover {
+    opacity:0.8;
+}
+canvas {
+    margin-top:20px;
+    image-rendering: pixelated;
+    border:2px solid white;
+}
+</style>
 </head>
-<body style="text-align:center; font-family:sans-serif; background:#111; color:white;">
+<body>
 
-<h1>Lava Skin Converter 🔥</h1>
+<h1>MC Skin 3D Converter</h1>
+<p>Lava • Ice • Shadow • Toxic</p>
 
-<input type="file" id="upload" accept="image/png"><br><br>
-<canvas id="canvas" width="64" height="64" style="image-rendering: pixelated; border:2px solid white;"></canvas><br><br>
-<button onclick="download()">Download Lava Skin</button>
+<input type="file" id="upload" accept="image/png"><br>
+
+<div class="container">
+<button onclick="applyStyle('lava')">Lava 🔥</button>
+<button onclick="applyStyle('ice')">Ice ❄</button>
+<button onclick="applyStyle('shadow')">Shadow 🌑</button>
+<button onclick="applyStyle('toxic')">Toxic ☣</button>
+</div>
+
+<canvas id="canvas" width="64" height="64"></canvas><br>
+
+<button onclick="downloadPNG()">Download PNG</button>
+<button onclick="downloadSTL()">Download STL (3D)</button>
 
 <script>
-const upload = document.getElementById("upload");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+let currentStyle = "lava";
 
-upload.addEventListener("change", function(e) {
-    const file = e.target.files[0];
+document.getElementById("upload").addEventListener("change", function(e) {
     const reader = new FileReader();
     reader.onload = function(event) {
         const img = new Image();
         img.onload = function() {
             ctx.drawImage(img, 0, 0);
-            lavaEffect();
         };
         img.src = event.target.result;
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(e.target.files[0]);
 });
 
-function lavaEffect() {
-    const imageData = ctx.getImageData(0, 0, 64, 64);
+function applyStyle(style){
+    currentStyle = style;
+    const imageData = ctx.getImageData(0,0,64,64);
     const data = imageData.data;
 
-    for (let i = 0; i < data.length; i += 4) {
-        let brightness = (data[i] + data[i+1] + data[i+2]) / 3;
+    for(let i=0;i<data.length;i+=4){
+        let b = (data[i]+data[i+1]+data[i+2])/3;
 
-        if (brightness < 50) {
-            data[i]=15; data[i+1]=15; data[i+2]=15;
-        } else if (brightness < 100) {
-            data[i]=180; data[i+1]=0; data[i+2]=0;
-        } else if (brightness < 170) {
-            data[i]=255; data[i+1]=100; data[i+2]=0;
-        } else {
-            data[i]=255; data[i+1]=220; data[i+2]=0;
+        if(style==="lava"){
+            if(b<50){data[i]=15;data[i+1]=15;data[i+2]=15;}
+            else if(b<100){data[i]=180;data[i+1]=0;data[i+2]=0;}
+            else if(b<170){data[i]=255;data[i+1]=100;data[i+2]=0;}
+            else{data[i]=255;data[i+1]=220;data[i+2]=0;}
+        }
+
+        if(style==="ice"){
+            if(b<50){data[i]=0;data[i+1]=40;data[i+2]=90;}
+            else if(b<100){data[i]=0;data[i+1]=90;data[i+2]=200;}
+            else if(b<170){data[i]=120;data[i+1]=200;data[i+2]=255;}
+            else{data[i]=240;data[i+1]=250;data[i+2]=255;}
+        }
+
+        if(style==="shadow"){
+            if(b<100){data[i]=20;data[i+1]=20;data[i+2]=20;}
+            else{data[i]=80;data[i+1]=0;data[i+2]=0;}
+        }
+
+        if(style==="toxic"){
+            if(b<50){data[i]=0;data[i+1]=30;data[i+2]=0;}
+            else if(b<100){data[i]=0;data[i+1]=120;data[i+2]=0;}
+            else if(b<170){data[i]=100;data[i+1]=255;data[i+2]=0;}
+            else{data[i]=200;data[i+1]=255;data[i+2]=120;}
         }
     }
 
-    ctx.putImageData(imageData, 0, 0);
+    ctx.putImageData(imageData,0,0);
 }
 
-function download() {
-    const link = document.createElement("a");
-    link.download = "lava_skin.png";
-    link.href = canvas.toDataURL();
+function downloadPNG(){
+    const link=document.createElement("a");
+    link.download="converted_skin.png";
+    link.href=canvas.toDataURL();
     link.click();
+}
+
+function downloadSTL(){
+    let stl="solid skin\n";
+    let scale=1;
+    let height=1;
+
+    const imgData=ctx.getImageData(0,0,64,64).data;
+
+    for(let y=0;y<64;y++){
+        for(let x=0;x<64;x++){
+            let i=(y*64+x)*4;
+            if(imgData[i+3]>0){
+                let z=height;
+                stl+=cube(x*scale,y*scale,z,scale);
+            }
+        }
+    }
+
+    stl+="endsolid skin";
+    const blob=new Blob([stl],{type:"application/sla"});
+    const link=document.createElement("a");
+    link.href=URL.createObjectURL(blob);
+    link.download="skin_3d.stl";
+    link.click();
+}
+
+function cube(x,y,z,s){
+    return `
+facet normal 0 0 0
+outer loop
+vertex ${x} ${y} 0
+vertex ${x+s} ${y} 0
+vertex ${x} ${y+s} ${z}
+endloop
+endfacet
+`;
 }
 </script>
 
