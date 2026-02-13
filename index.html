@@ -2,39 +2,33 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>MC Skin 3D Converter</title>
+<title>MC Skin 3D Edition</title>
 <style>
-body {
-    margin:0;
-    background: linear-gradient(135deg,#0f0f0f,#1a1a1a);
-    font-family: Arial, sans-serif;
-    color:white;
-    text-align:center;
+body{
+margin:0;
+background:linear-gradient(135deg,#0f0f0f,#1c1c1c);
+font-family:Arial;
+color:white;
+text-align:center;
 }
-h1 {
-    margin-top:30px;
-    font-size:32px;
+h1{margin-top:30px;font-size:34px;}
+p{opacity:0.7;}
+button{
+margin:8px;
+padding:12px 22px;
+border:none;
+border-radius:10px;
+background:linear-gradient(45deg,#ff6600,#ff0000);
+color:white;
+cursor:pointer;
+font-weight:bold;
 }
-.container {
-    margin-top:30px;
-}
-button {
-    margin:10px;
-    padding:10px 20px;
-    border:none;
-    border-radius:8px;
-    background:linear-gradient(45deg,#ff5500,#ff0000);
-    color:white;
-    cursor:pointer;
-    font-weight:bold;
-}
-button:hover {
-    opacity:0.8;
-}
-canvas {
-    margin-top:20px;
-    image-rendering: pixelated;
-    border:2px solid white;
+button:hover{opacity:0.8;}
+canvas{
+margin-top:20px;
+image-rendering:pixelated;
+border:2px solid white;
+box-shadow:0 0 20px rgba(255,80,0,0.4);
 }
 </style>
 </head>
@@ -45,7 +39,7 @@ canvas {
 
 <input type="file" id="upload" accept="image/png"><br>
 
-<div class="container">
+<div>
 <button onclick="applyStyle('lava')">Lava 🔥</button>
 <button onclick="applyStyle('ice')">Ice ❄</button>
 <button onclick="applyStyle('shadow')">Shadow 🌑</button>
@@ -55,105 +49,133 @@ canvas {
 <canvas id="canvas" width="64" height="64"></canvas><br>
 
 <button onclick="downloadPNG()">Download PNG</button>
-<button onclick="downloadSTL()">Download STL (3D)</button>
+<button onclick="downloadSTL()">Download STL (Clean 3D)</button>
 
 <script>
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-let currentStyle = "lava";
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
 
-document.getElementById("upload").addEventListener("change", function(e) {
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        const img = new Image();
-        img.onload = function() {
-            ctx.drawImage(img, 0, 0);
-        };
-        img.src = event.target.result;
-    };
-    reader.readAsDataURL(e.target.files[0]);
+document.getElementById("upload").addEventListener("change",function(e){
+const reader=new FileReader();
+reader.onload=function(event){
+const img=new Image();
+img.onload=function(){
+ctx.clearRect(0,0,64,64);
+ctx.drawImage(img,0,0);
+};
+img.src=event.target.result;
+};
+reader.readAsDataURL(e.target.files[0]);
 });
 
+function recolor(data,brightness,colors){
+if(brightness<60)return colors[0];
+if(brightness<120)return colors[1];
+if(brightness<180)return colors[2];
+return colors[3];
+}
+
 function applyStyle(style){
-    currentStyle = style;
-    const imageData = ctx.getImageData(0,0,64,64);
-    const data = imageData.data;
+const imageData=ctx.getImageData(0,0,64,64);
+const data=imageData.data;
 
-    for(let i=0;i<data.length;i+=4){
-        let b = (data[i]+data[i+1]+data[i+2])/3;
+let palette;
 
-        if(style==="lava"){
-            if(b<50){data[i]=15;data[i+1]=15;data[i+2]=15;}
-            else if(b<100){data[i]=180;data[i+1]=0;data[i+2]=0;}
-            else if(b<170){data[i]=255;data[i+1]=100;data[i+2]=0;}
-            else{data[i]=255;data[i+1]=220;data[i+2]=0;}
-        }
+if(style==="lava"){
+palette=[[30,30,30],[200,0,0],[255,120,0],[255,230,0]];
+}
 
-        if(style==="ice"){
-            if(b<50){data[i]=0;data[i+1]=40;data[i+2]=90;}
-            else if(b<100){data[i]=0;data[i+1]=90;data[i+2]=200;}
-            else if(b<170){data[i]=120;data[i+1]=200;data[i+2]=255;}
-            else{data[i]=240;data[i+1]=250;data[i+2]=255;}
-        }
+if(style==="ice"){
+palette=[[0,50,120],[0,150,255],[150,220,255],[255,255,255]];
+}
 
-        if(style==="shadow"){
-            if(b<100){data[i]=20;data[i+1]=20;data[i+2]=20;}
-            else{data[i]=80;data[i+1]=0;data[i+2]=0;}
-        }
+if(style==="shadow"){
+palette=[[20,20,20],[60,60,60],[140,140,140],[240,240,240]];
+}
 
-        if(style==="toxic"){
-            if(b<50){data[i]=0;data[i+1]=30;data[i+2]=0;}
-            else if(b<100){data[i]=0;data[i+1]=120;data[i+2]=0;}
-            else if(b<170){data[i]=100;data[i+1]=255;data[i+2]=0;}
-            else{data[i]=200;data[i+1]=255;data[i+2]=120;}
-        }
-    }
+if(style==="toxic"){
+palette=[[0,40,0],[0,150,0],[150,255,0],[255,255,0]];
+}
 
-    ctx.putImageData(imageData,0,0);
+for(let i=0;i<data.length;i+=4){
+let b=(data[i]+data[i+1]+data[i+2])/3;
+let col=recolor(data,b,palette);
+data[i]=col[0];
+data[i+1]=col[1];
+data[i+2]=col[2];
+}
+
+ctx.putImageData(imageData,0,0);
 }
 
 function downloadPNG(){
-    const link=document.createElement("a");
-    link.download="converted_skin.png";
-    link.href=canvas.toDataURL();
-    link.click();
+const link=document.createElement("a");
+link.download="converted_skin.png";
+link.href=canvas.toDataURL();
+link.click();
 }
 
 function downloadSTL(){
-    let stl="solid skin\n";
-    let scale=1;
-    let height=1;
+let stl="solid skin\n";
+const baseHeight=2;
+const pixelHeight=1;
+const scale=1;
 
-    const imgData=ctx.getImageData(0,0,64,64).data;
+const imgData=ctx.getImageData(0,0,64,64).data;
 
-    for(let y=0;y<64;y++){
-        for(let x=0;x<64;x++){
-            let i=(y*64+x)*4;
-            if(imgData[i+3]>0){
-                let z=height;
-                stl+=cube(x*scale,y*scale,z,scale);
-            }
-        }
-    }
-
-    stl+="endsolid skin";
-    const blob=new Blob([stl],{type:"application/sla"});
-    const link=document.createElement("a");
-    link.href=URL.createObjectURL(blob);
-    link.download="skin_3d.stl";
-    link.click();
+for(let y=0;y<64;y++){
+for(let x=0;x<64;x++){
+let i=(y*64+x)*4;
+if(imgData[i+3]>0){
+addCube(x,y,0,scale,baseHeight);
+addCube(x,y,baseHeight,scale,pixelHeight);
+}
+}
 }
 
-function cube(x,y,z,s){
-    return `
-facet normal 0 0 0
+stl+="endsolid skin";
+
+const blob=new Blob([stl],{type:"application/sla"});
+const link=document.createElement("a");
+link.href=URL.createObjectURL(blob);
+link.download="skin_3d.stl";
+link.click();
+
+function addCube(x,y,z,s,h){
+let x0=x*s,y0=y*s,z0=z;
+let x1=x0+s,y1=y0+s,z1=z+h;
+
+stl+=`
+facet normal 0 0 -1
 outer loop
-vertex ${x} ${y} 0
-vertex ${x+s} ${y} 0
-vertex ${x} ${y+s} ${z}
+vertex ${x0} ${y0} ${z0}
+vertex ${x1} ${y0} ${z0}
+vertex ${x1} ${y1} ${z0}
+endloop
+endfacet
+facet normal 0 0 -1
+outer loop
+vertex ${x0} ${y0} ${z0}
+vertex ${x1} ${y1} ${z0}
+vertex ${x0} ${y1} ${z0}
+endloop
+endfacet
+facet normal 0 0 1
+outer loop
+vertex ${x0} ${y0} ${z1}
+vertex ${x1} ${y1} ${z1}
+vertex ${x1} ${y0} ${z1}
+endloop
+endfacet
+facet normal 0 0 1
+outer loop
+vertex ${x0} ${y0} ${z1}
+vertex ${x0} ${y1} ${z1}
+vertex ${x1} ${y1} ${z1}
 endloop
 endfacet
 `;
+}
 }
 </script>
 
