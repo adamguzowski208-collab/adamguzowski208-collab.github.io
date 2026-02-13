@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Skin 3D Generator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h1>🔥 Skin 3D Generator</h1>
+
+    <input type="file" id="fileInput" accept="image/png" onchange="loadSkin()">
+
+    <div class="buttons">
+        <button onclick="applyStyle('lava')">Lava</button>
+        <button onclick="applyStyle('ice')">Ice</button>
+        <button onclick="applyStyle('shadow')">Shadow</button>
+        <button onclick="applyStyle('toxic')">Toxic</button>
+    </div>
+
+    <button class="export" onclick="exportSTL()">Export STL</button>
+
+    <div class="preview-box">
+        <img id="preview">
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
