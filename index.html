@@ -1,183 +1,167 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>MC Skin 3D Edition</title>
-<style>
-body{
-margin:0;
-background:linear-gradient(135deg,#0f0f0f,#1c1c1c);
-font-family:Arial;
-color:white;
-text-align:center;
-}
-h1{margin-top:30px;font-size:34px;}
-p{opacity:0.7;}
-button{
-margin:8px;
-padding:12px 22px;
-border:none;
-border-radius:10px;
-background:linear-gradient(45deg,#ff6600,#ff0000);
-color:white;
-cursor:pointer;
-font-weight:bold;
-}
-button:hover{opacity:0.8;}
-canvas{
-margin-top:20px;
-image-rendering:pixelated;
-border:2px solid white;
-box-shadow:0 0 20px rgba(255,80,0,0.4);
-}
-</style>
-</head>
-<body>
+let img;
 
-<h1>MC Skin 3D Converter</h1>
-<p>Lava • Ice • Shadow • Toxic</p>
+function loadSkin(){
+    const file=document.getElementById("fileInput").files[0];
+    if(!file) return;
 
-<input type="file" id="upload" accept="image/png"><br>
-
-<div>
-<button onclick="applyStyle('lava')">Lava 🔥</button>
-<button onclick="applyStyle('ice')">Ice ❄</button>
-<button onclick="applyStyle('shadow')">Shadow 🌑</button>
-<button onclick="applyStyle('toxic')">Toxic ☣</button>
-</div>
-
-<canvas id="canvas" width="64" height="64"></canvas><br>
-
-<button onclick="downloadPNG()">Download PNG</button>
-<button onclick="downloadSTL()">Download STL (Clean 3D)</button>
-
-<script>
-const canvas=document.getElementById("canvas");
-const ctx=canvas.getContext("2d");
-
-document.getElementById("upload").addEventListener("change",function(e){
-const reader=new FileReader();
-reader.onload=function(event){
-const img=new Image();
-img.onload=function(){
-ctx.clearRect(0,0,64,64);
-ctx.drawImage(img,0,0);
-};
-img.src=event.target.result;
-};
-reader.readAsDataURL(e.target.files[0]);
-});
-
-function recolor(data,brightness,colors){
-if(brightness<60)return colors[0];
-if(brightness<120)return colors[1];
-if(brightness<180)return colors[2];
-return colors[3];
+    const reader=new FileReader();
+    reader.onload=function(e){
+        const image=new Image();
+        image.onload=function(){
+            img=image;
+            document.getElementById("preview").src=e.target.result;
+        }
+        image.src=e.target.result;
+    }
+    reader.readAsDataURL(file);
 }
 
 function applyStyle(style){
-const imageData=ctx.getImageData(0,0,64,64);
-const data=imageData.data;
+    if(!img) return alert("Najpierw wrzuć skina!");
 
-let palette;
+    const canvas=document.createElement("canvas");
+    const ctx=canvas.getContext("2d");
+    canvas.width=img.width;
+    canvas.height=img.height;
+    ctx.drawImage(img,0,0);
 
-if(style==="lava"){
-palette=[[30,30,30],[200,0,0],[255,120,0],[255,230,0]];
+    const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+    const data=imageData.data;
+
+    let palette;
+
+    if(style==="lava"){
+        palette=[
+            [255,0,0],
+            [255,120,0],
+            [255,200,0]
+        ];
+    }
+
+    if(style==="ice"){
+        palette=[
+            [0,80,255],
+            [0,180,255],
+            [255,255,255]
+        ];
+    }
+
+    if(style==="shadow"){
+        palette=[
+            [0,0,0],
+            [60,60,60],
+            [160,160,160],
+            [255,255,255]
+        ];
+    }
+
+    if(style==="toxic"){
+        palette=[
+            [0,60,0],
+            [0,180,0],
+            [120,255,0],
+            [255,255,0]
+        ];
+    }
+
+    for(let i=0;i<data.length;i+=4){
+        if(data[i+3]===0) continue;
+
+        const brightness=(data[i]+data[i+1]+data[i+2])/3;
+        const index=Math.floor((brightness/256)*palette.length);
+        const color=palette[index];
+
+        data[i]=color[0];
+        data[i+1]=color[1];
+        data[i+2]=color[2];
+    }
+
+    ctx.putImageData(imageData,0,0);
+    document.getElementById("preview").src=canvas.toDataURL();
 }
 
-if(style==="ice"){
-palette=[[0,50,120],[0,150,255],[150,220,255],[255,255,255]];
+function exportSTL(){
+    if(!img) return alert("Najpierw wrzuć skina!");
+
+    const pixelSize=1;
+    const baseHeight=2;
+    const pixelHeight=1;
+
+    const canvas=document.createElement("canvas");
+    const ctx=canvas.getContext("2d");
+    canvas.width=img.width;
+    canvas.height=img.height;
+    ctx.drawImage(img,0,0);
+
+    const data=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+
+    let triangles=[];
+
+    function addQuad(v1,v2,v3,v4){
+        triangles.push([v1,v2,v3]);
+        triangles.push([v1,v3,v4]);
+    }
+
+    function addCube(x,y,z,w,h,d){
+        const v=[
+            [x,y,z],
+            [x+w,y,z],
+            [x+w,y+h,z],
+            [x,y+h,z],
+            [x,y,z+d],
+            [x+w,y,z+d],
+            [x+w,y+h,z+d],
+            [x,y+h,z+d]
+        ];
+
+        // front
+        addQuad(v[0],v[1],v[2],v[3]);
+        // back
+        addQuad(v[4],v[5],v[6],v[7]);
+        // left
+        addQuad(v[0],v[4],v[7],v[3]);
+        // right
+        addQuad(v[1],v[5],v[6],v[2]);
+        // top
+        addQuad(v[3],v[2],v[6],v[7]);
+        // bottom
+        addQuad(v[0],v[1],v[5],v[4]);
+    }
+
+    // baza
+    addCube(0,0,0,img.width*pixelSize,img.height*pixelSize,baseHeight);
+
+    for(let y=0;y<img.height;y++){
+        for(let x=0;x<img.width;x++){
+            const i=(y*img.width+x)*4;
+            if(data[i+3]===0) continue;
+
+            addCube(
+                x*pixelSize,
+                y*pixelSize,
+                baseHeight,
+                pixelSize,
+                pixelSize,
+                pixelHeight
+            );
+        }
+    }
+
+    let stl="solid skin\n";
+
+    triangles.forEach(tri=>{
+        stl+="facet normal 0 0 0\n outer loop\n";
+        tri.forEach(v=>{
+            stl+=`  vertex ${v[0]} ${v[1]} ${v[2]}\n`;
+        });
+        stl+=" endloop\nendfacet\n";
+    });
+
+    stl+="endsolid skin";
+
+    const blob=new Blob([stl],{type:"text/plain"});
+    const link=document.createElement("a");
+    link.href=URL.createObjectURL(blob);
+    link.download="skin_relief.stl";
+    link.click();
 }
-
-if(style==="shadow"){
-palette=[[20,20,20],[60,60,60],[140,140,140],[240,240,240]];
-}
-
-if(style==="toxic"){
-palette=[[0,40,0],[0,150,0],[150,255,0],[255,255,0]];
-}
-
-for(let i=0;i<data.length;i+=4){
-let b=(data[i]+data[i+1]+data[i+2])/3;
-let col=recolor(data,b,palette);
-data[i]=col[0];
-data[i+1]=col[1];
-data[i+2]=col[2];
-}
-
-ctx.putImageData(imageData,0,0);
-}
-
-function downloadPNG(){
-const link=document.createElement("a");
-link.download="converted_skin.png";
-link.href=canvas.toDataURL();
-link.click();
-}
-
-function downloadSTL(){
-let stl="solid skin\n";
-const baseHeight=2;
-const pixelHeight=1;
-const scale=1;
-
-const imgData=ctx.getImageData(0,0,64,64).data;
-
-for(let y=0;y<64;y++){
-for(let x=0;x<64;x++){
-let i=(y*64+x)*4;
-if(imgData[i+3]>0){
-addCube(x,y,0,scale,baseHeight);
-addCube(x,y,baseHeight,scale,pixelHeight);
-}
-}
-}
-
-stl+="endsolid skin";
-
-const blob=new Blob([stl],{type:"application/sla"});
-const link=document.createElement("a");
-link.href=URL.createObjectURL(blob);
-link.download="skin_3d.stl";
-link.click();
-
-function addCube(x,y,z,s,h){
-let x0=x*s,y0=y*s,z0=z;
-let x1=x0+s,y1=y0+s,z1=z+h;
-
-stl+=`
-facet normal 0 0 -1
-outer loop
-vertex ${x0} ${y0} ${z0}
-vertex ${x1} ${y0} ${z0}
-vertex ${x1} ${y1} ${z0}
-endloop
-endfacet
-facet normal 0 0 -1
-outer loop
-vertex ${x0} ${y0} ${z0}
-vertex ${x1} ${y1} ${z0}
-vertex ${x0} ${y1} ${z0}
-endloop
-endfacet
-facet normal 0 0 1
-outer loop
-vertex ${x0} ${y0} ${z1}
-vertex ${x1} ${y1} ${z1}
-vertex ${x1} ${y0} ${z1}
-endloop
-endfacet
-facet normal 0 0 1
-outer loop
-vertex ${x0} ${y0} ${z1}
-vertex ${x0} ${y1} ${z1}
-vertex ${x1} ${y1} ${z1}
-endloop
-endfacet
-`;
-}
-}
-</script>
-
-</body>
-</html>
