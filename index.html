@@ -3,12 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <title>Skin Generator</title>
+
+<style>
+body{
+margin:0;
+background:linear-gradient(135deg,#111,#1f1f1f);
+color:white;
+text-align:center;
+font-family:Arial;
+padding:40px;
+}
+button{
+margin:5px;
+padding:10px 20px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+}
+button:hover{
+transform:scale(1.1);
+}
+img{
+margin-top:20px;
+image-rendering:pixelated;
+width:256px;
+border:2px solid #444;
+}
+</style>
+
 </head>
-<body style="background:#111;color:white;text-align:center;font-family:Arial;padding:40px;">
+<body>
 
 <h1>🔥 Skin 3D Generator</h1>
 
 <input type="file" id="fileInput" accept="image/png" onchange="loadSkin()">
+
 <br><br>
 
 <button onclick="applyStyle('lava')">Lava</button>
@@ -17,10 +47,12 @@
 <button onclick="applyStyle('toxic')">Toxic</button>
 
 <br><br>
+
 <button onclick="exportSTL()">Export STL</button>
 
 <br><br>
-<img id="preview" style="image-rendering:pixelated;width:256px;">
+
+<img id="preview">
 
 <script src="script.js"></script>
 
