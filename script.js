@@ -114,21 +114,14 @@ function exportSTL(){
             [x,y+h,z+d]
         ];
 
-        // front
         addQuad(v[0],v[1],v[2],v[3]);
-        // back
         addQuad(v[4],v[5],v[6],v[7]);
-        // left
         addQuad(v[0],v[4],v[7],v[3]);
-        // right
         addQuad(v[1],v[5],v[6],v[2]);
-        // top
         addQuad(v[3],v[2],v[6],v[7]);
-        // bottom
         addQuad(v[0],v[1],v[5],v[4]);
     }
 
-    // baza
     addCube(0,0,0,img.width*pixelSize,img.height*pixelSize,baseHeight);
 
     for(let y=0;y<img.height;y++){
